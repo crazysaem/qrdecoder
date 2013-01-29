@@ -1,6 +1,5 @@
 ## QR Code Decoder
 
-
 ## Description:
 
 Takes a QR Code and returns a decoded string.
