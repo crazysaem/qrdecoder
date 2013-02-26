@@ -17,21 +17,32 @@ import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
 
+import org.imgscalr.Scalr.*;
+
 public class Main 
 {
 	public static void main(String[] args) 
 	{
-		for (int i=0; i<=8; i++)
+		for (int i=10; i<=10; i++)
 		{
-			String result =  decodeQRTag("src/data/0" + i + ".jpg", true);
+			String result;
 			
-			if (result != null)
+			if (i<10)
 			{
-				System.out.println(result + "!");
+				result =  decodeQRTag("src/data/0" + i + ".jpg", true);
 			}
 			else
 			{
-				System.err.println("No QR-Code found");
+				result =  decodeQRTag("src/data/" + i + ".jpg", true);
+			}
+			
+			if (result != null)
+			{
+				System.out.println(i + ": " + result + "!");
+			}
+			else
+			{
+				System.err.println(i + ": " + "No QR-Code found");
 			}
 		}
 
@@ -50,7 +61,9 @@ public class Main
 		{
 			e1.printStackTrace();
 		}
-
+		
+		image = LocateQrCode.locate(image);
+		
 		//convert the image to a binary bitmap source
 		LuminanceSource source = new BufferedImageLuminanceSource(image);
 		BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
