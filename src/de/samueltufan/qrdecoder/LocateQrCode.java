@@ -13,156 +13,102 @@ public class LocateQrCode
 	
 	public static BufferedImage locate (BufferedImage image)
 	{
+		int color, count = 0, countWhiteX = 0, countBlackX = 0, countWhiteY = 0, countBlackY = 0, countDiffX = 0, countDiffY = 0;
+		
 		pixeColors = convertTo2DWithoutUsingGetRGB(image);
 		
-		for (int y = 0; y < pixeColors.length; y++)
+		for (int y = 0; y < pixeColors[0].length; y++)
 		{
-			for (int x = 0; x < pixeColors[y].length; x++)
-			{
-				if (getColor(x, y) == BLACK)
+			count = 0;
+			
+			for (int x = 0; x < pixeColors.length; x++)
+			{					
+				color = getColor(x, y);
+				if (color == WHITE)
 				{
-					if (checkIfQrPart(x, y))
+					count++;
+				}
+				else
+				{
+					if (count>15)
 					{
-						System.out.println("found! x: " + x + " y: " + y);
+						countWhiteX = count;						
+						countBlackX = colorCountX(x - countWhiteX, y - 5, x, y, BLACK);
+						
+						countDiffX = Math.abs(countBlackX - countWhiteX);
+						
+						if (countDiffX < 5)
+						{
+							countWhiteY = colorCountY(x - 2, y, x, y + countWhiteX, WHITE);
+							countBlackY = colorCountY(x + 2, y, x + 5, y + countWhiteX, BLACK);
+							
+							countDiffY = Math.abs(countBlackY - countWhiteY);
+							
+							if (countDiffY < 5)
+							{
+								if (Math.abs(countDiffX - countDiffY) < 5)
+								{
+									System.out.println("x: " + x + " y: " + y);
+								}								
+							}							
+						}	
 					}
-				}				
+					
+					count = 0;
+				}
 			}
-		};
+		}
 		
 		return image;	
 	}
 	
-	private static boolean checkIfQrPart(int x, int y)
+	public static int colorCountX (int xstart, int ystart, int xend, int yend, int color)
 	{
-		int leftStatus = 0, rightStatus = 0, bottomStatus = 0, topStatus = 0, color;
-		int diffMax = 250;
+		int count = 0, countMax = 0;
 		
-		for (int diff = 0; diff <= diffMax; diff++)
-		{			
-			//left:	
-			color = getColor(x - diff, y);
+		for (int y = ystart; y <= yend; y++)
+		{	
+			count = 0;
 			
-			switch (color)
-			{
-				case WHITE:
-					if (leftStatus % 2 == 0)
-					{
-						leftStatus++;
-					}
-				break;
-				
-				case BLACK:
-					if (leftStatus % 2 == 1)
-					{
-						leftStatus++;
-					}
-				break;
-				
-				case VOID:
-					if (leftStatus<2)
-					{
-						leftStatus = -1;
-						diff = diffMax;
-					}
-				break;
+			for (int x = xstart; x <= xend; x++)
+			{				
+				if (getColor(x, y) == color)
+				{
+					count++;
+				}
 			}
-					
-			//right:
-			color = getColor(x + diff, y);
 			
-			switch (color)
-			{
-				case WHITE:
-					if (rightStatus % 2 == 0)
-					{
-						rightStatus++;
-					}
-				break;
-				
-				case BLACK:
-					if (rightStatus % 2 == 1)
-					{
-						rightStatus++;
-					}
-				break;
-				
-				case VOID:
-					if (rightStatus<2)
-					{
-						rightStatus = -1;
-						diff = diffMax;
-					}
-				break;
-			}
-					
-			//bottom:				
-			color = getColor(x, y + diff);
-			
-			switch (color)
-			{
-				case WHITE:
-					if (bottomStatus % 2 == 0)
-					{
-						bottomStatus++;
-					}
-				break;
-				
-				case BLACK:
-					if (bottomStatus % 2 == 1)
-					{
-						bottomStatus++;
-					}
-				break;
-				
-				case VOID:
-					if (bottomStatus<2)
-					{
-						bottomStatus = -1;
-						diff = diffMax;
-					}
-				break;
-			}
-		
-			//top:				
-			color = getColor(x, y - diff);
-			
-			switch (color)
-			{
-				case WHITE:
-					if (topStatus % 2 == 0)
-					{
-						topStatus++;
-					}
-				break;
-				
-				case BLACK:
-					if (topStatus % 2 == 1)
-					{
-						topStatus++;
-					}
-				break;
-				
-				case VOID:
-					if (topStatus<2)
-					{
-						topStatus = -1;
-						diff = diffMax;
-					}
-				break;
-			}
+			countMax = Math.max(countMax, count);
 		}
 		
-		if (leftStatus != 2 || rightStatus != 2  || bottomStatus != 2 || topStatus != 2)
-		{
-			return false;
+		return countMax;
+	}
+	
+	public static int colorCountY (int xstart, int ystart, int xend, int yend, int color)
+	{
+		int count = 0, countMax = 0;
+		
+		for (int x = xstart; x <= xend; x++)		
+		{	
+			count = 0;
+			
+			for (int y = ystart; y <= yend; y++)
+			{				
+				if (getColor(x, y) == color)
+				{
+					count++;
+				}
+			}
+			
+			countMax = Math.max(countMax, count);
 		}
 		
-		return true;
+		return countMax;
 	}
 	
 	private static int getColor(int x, int y)
 	{
-		if (x < 0 || y < 0 || x > pixeColors.length || y > pixeColors[0].length)
+		if (x < 0 || y < 0 || x >= pixeColors.length || y >= pixeColors[0].length)
 		{
 			return VOID;
 		}
@@ -173,19 +119,29 @@ public class LocateQrCode
 		g = (((int) pixeColors[x][y] & 0xff00) >> 8); // green
 		b = ((int) pixeColors[x][y] & 0xff); // blue	
 		
-		//white
-		if (r > 128 && g > 128 && b > 128)
+		if (getBrightness(r, g, b) > 0.6)
 		{
 			return WHITE;
 		}
 		
-		//black
-		if (r < 128 && g < 128 && b < 128)
+		if (getBrightness(r, g, b) < 0.3)
 		{
 			return BLACK;
 		}
 		
 		return VOID;
+	}
+	
+	private static float getBrightness(int r, int g, int b)
+	{
+		float brightness;	
+		
+		int cmax = (r > g) ? r : g;
+		if (b > cmax) cmax = b;
+		
+		brightness = ((float) cmax) / 255.0f;
+
+		return brightness;
 	}
 	
 	private static int[][] convertTo2DWithoutUsingGetRGB(BufferedImage image) 
