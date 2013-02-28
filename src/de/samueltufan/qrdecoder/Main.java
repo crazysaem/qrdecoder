@@ -23,17 +23,17 @@ public class Main
 {
 	public static void main(String[] args) 
 	{
-		for (int i=9; i<=9; i++)
+		for (int i=0; i<=17; i++)
 		{
 			String result;
 			
 			if (i<10)
 			{
-				result =  decodeQRTag("src/data/0" + i + ".jpg", true);
+				result =  decodeQRTag("src/data/0" + i + ".jpg", ""+i, true);
 			}
 			else
 			{
-				result =  decodeQRTag("src/data/" + i + ".jpg", true);
+				result =  decodeQRTag("src/data/" + i + ".jpg", ""+i, true);
 			}
 			
 			if (result != null)
@@ -48,7 +48,7 @@ public class Main
 
 	}
 	
-	public static String decodeQRTag(String filePath, boolean tryHard)
+	public static String decodeQRTag(String filePath, String name, boolean tryHard)
 	{
 		File f = new File(filePath);
 
@@ -62,7 +62,7 @@ public class Main
 			e1.printStackTrace();
 		}
 		
-		image = LocateQrCode.locate(image);
+		image = LocateQrCode.locate(image, name);
 		
 		//convert the image to a binary bitmap source
 		LuminanceSource source = new BufferedImageLuminanceSource(image);

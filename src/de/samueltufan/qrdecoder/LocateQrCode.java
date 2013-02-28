@@ -1,7 +1,12 @@
 package de.samueltufan.qrdecoder;
 
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
 
 public class LocateQrCode 
 {
@@ -11,11 +16,25 @@ public class LocateQrCode
 	private static final int WHITE = 1;
 	private static final int VOID = 2;
 	
-	public static BufferedImage locate (BufferedImage image)
+	private static final boolean DEBUG = true;
+	
+	private static BufferedImage debugImage;	
+	private static File f;
+	
+	public static BufferedImage locate (BufferedImage image, String name)
 	{
 		int color, count = 0, countWhiteX = 0, countBlackX = 0, countWhiteY = 0, countBlackY = 0, countDiffX = 0, countDiffY = 0;
 		
 		pixeColors = convertTo2DWithoutUsingGetRGB(image);
+		Graphics g;
+		
+		if (DEBUG)
+		{
+			f = new File("src/data/" + name + "debug.png");
+			
+			debugImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
+			g = debugImage.getGraphics();
+		}
 		
 		for (int y = 0; y < pixeColors[0].length; y++)
 		{
@@ -32,13 +51,15 @@ public class LocateQrCode
 				{
 					if (count>15)
 					{
-						countWhiteX = count;						
-						countBlackX = colorCountX(x - countWhiteX, y - 5, x, y, BLACK);
+						countWhiteX = count;	
 						
+						//check for a corresponding black line above the white one
+						countBlackX = colorCountX(x - countWhiteX, y - 5, x, y, BLACK);						
 						countDiffX = Math.abs(countBlackX - countWhiteX);
 						
 						if (countDiffX < 5)
 						{
+							//check for a corresponding white and black line vertically below from this point
 							countWhiteY = colorCountY(x - 2, y, x, y + countWhiteX, WHITE);
 							countBlackY = colorCountY(x + 2, y, x + 5, y + countWhiteX, BLACK);
 							
@@ -46,16 +67,62 @@ public class LocateQrCode
 							
 							if (countDiffY < 5)
 							{
-								if (Math.abs(countDiffX - countDiffY) < 5)
+								if (Math.abs(countWhiteX - countWhiteY) < 5)
 								{
-									System.out.println("x: " + x + " y: " + y);
+									System.out.println("top right corner! x: " + x + " y: " + y + " width: " + countWhiteX + " height: " + countWhiteY);
+									if (DEBUG)
+									{
+										g.drawLine(x - countWhiteX, y, x, y + 1);
+										g.drawLine(x, y, x + 1, y + countWhiteY);
+									}
 								}								
 							}							
-						}	
+						}
+						else
+						{
+							//check for a corresponding black line below the white one
+							countBlackX = colorCountX(x - countWhiteX, y, x, y + 5, BLACK);						
+							countDiffX = Math.abs(countBlackX - countWhiteX);
+							
+							if (countDiffX < 5)
+							{
+								//check for a corresponding white and black line vertically above from this point
+								countWhiteY = colorCountY(x - 2, y - countWhiteX, x, y, WHITE);
+								countBlackY = colorCountY(x + 2, y - countWhiteX, x + 5, y, BLACK);
+								
+								countDiffY = Math.abs(countBlackY - countWhiteY);
+								
+								if (countDiffY < 5)
+								{
+									if (Math.abs(countWhiteX - countWhiteY) < 5)
+									{
+										System.out.println("bottom right corner! x: " + x + " y: " + y + " width: " + countWhiteX + " height: " + countWhiteY);
+										if (DEBUG)
+										{
+											g.drawLine(x - countWhiteX, y, x, y + 1);
+											g.drawLine(x, y - countWhiteY, x + 1, y);
+										}
+									}								
+								}							
+							}
+						}
 					}
 					
 					count = 0;
 				}
+			}
+		}
+		
+		if (DEBUG)
+		{
+			g.dispose();
+			
+			try 
+			{
+				ImageIO.write(debugImage, "PNG", f);
+			} catch (IOException e) 
+			{
+				e.printStackTrace();
 			}
 		}
 		
