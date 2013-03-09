@@ -27,11 +27,11 @@ public class Main
 
 			if (i < 10)
 			{
-				result = decodeQRTag("src/data/0" + i + ".jpg", "" + i, true);
+				result = decodeQRTag("src/data/0" + i + ".jpg", "" + i, i, true);
 			}
 			else
 			{
-				result = decodeQRTag("src/data/" + i + ".jpg", "" + i, true);
+				result = decodeQRTag("src/data/" + i + ".jpg", "" + i, i, true);
 			}
 
 			if (result != null)
@@ -45,7 +45,7 @@ public class Main
 		}
 	}
 
-	public static String decodeQRTag(String filePath, String name, boolean tryHard)
+	public static String decodeQRTag(String filePath, String name, int i, boolean tryHard)
 	{
 		File f = new File(filePath);
 
@@ -61,37 +61,44 @@ public class Main
 		}
 
 		image = LocateQrCode.locate(image, name);
-
-		// convert the image to a binary bitmap source
-		LuminanceSource source = new BufferedImageLuminanceSource(image);
-		BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-
-		// decode the barcode
-		QRCodeReader reader = new QRCodeReader();
-
-		Result result = null;
-
-		Map<DecodeHintType, ?> hints = new HashMap<DecodeHintType, Object>();
-		if (tryHard)
-		{
-			hints.put(DecodeHintType.TRY_HARDER, null);
+		
+		if (image != null)
+		{		
+			BufferedImageUtils.writeBufferedImage(image, "src/data/" + i + "crop.jpg");
+	
+			// convert the image to a binary bitmap source
+			LuminanceSource source = new BufferedImageLuminanceSource(image);
+			BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+	
+			// decode the barcode
+			QRCodeReader reader = new QRCodeReader();
+	
+			Result result = null;
+	
+			Map<DecodeHintType, ?> hints = new HashMap<DecodeHintType, Object>();
+			if (tryHard)
+			{
+				hints.put(DecodeHintType.TRY_HARDER, null);
+			}
+	
+			try
+			{
+				result = reader.decode(bitmap, hints);
+			}
+			catch (ReaderException e)
+			{}
+	
+			// byte[] b = result.getRawBytes();
+			if (result != null)
+			{
+				return result.getText();
+			}
+			else
+			{
+				return null;
+			}
 		}
-
-		try
-		{
-			result = reader.decode(bitmap, hints);
-		}
-		catch (ReaderException e)
-		{}
-
-		// byte[] b = result.getRawBytes();
-		if (result != null)
-		{
-			return result.getText();
-		}
-		else
-		{
-			return null;
-		}
+		
+		return null;
 	}
 }

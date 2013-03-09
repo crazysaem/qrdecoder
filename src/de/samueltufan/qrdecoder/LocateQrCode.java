@@ -3,12 +3,15 @@ package de.samueltufan.qrdecoder;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
 import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
+
+import org.imgscalr.Scalr;
 
 public class LocateQrCode
 {
@@ -41,7 +44,7 @@ public class LocateQrCode
 		findQrBlobs(image, g);
 		
 		g.setColor(Color.WHITE);
-		checkQRBlocks(g);
+		Rectangle r = checkQRBlocks(g);
 		
 		if (DEBUG)
 		{
@@ -57,14 +60,52 @@ public class LocateQrCode
 			}
 		}
 		
-		return image;
+		if (r != null)
+		{
+			BufferedImageOp[] ops = new BufferedImageOp[0];
+			
+			if (r.p.x < 0)
+				r.p.x = 0;
+			
+			if (r.p.y < 0)
+				r.p.y = 0;
+			
+			if (r.p.x + r.width >= image.getWidth())
+				r.width = image.getWidth() - r.p.x;
+			
+			if (r.p.y + r.height >= image.getHeight())
+				r.height = image.getHeight() - r.p.y;
+			
+			for (int y = 0; y < image.getHeight(); y++)
+			{
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					if (getColor(x, y) == BLACK)
+					{
+						image.setRGB(x, y, 0x000000);
+					}
+					else
+					{
+						image.setRGB(x, y, 0xffffff);
+					}
+				}
+			}
+			
+			image = Scalr.crop(image, r.p.x, r.p.y, r.width, r.height, ops);			
+			
+			return image;
+		}
+		
+		return null;
 	}
 	
-	public static void checkQRBlocks(Graphics g)
+	public static Rectangle checkQRBlocks(Graphics g)
 	{	
 		Point pa, pb, pc;
 		Vector v0, v1, v2;
-		v0 = new Vector(new Point(0, 0, 0, 0), new Point(1, 0, 0, 0));
+		float overflow = 2f;
+		
+		v0 = new Vector(new Point(0, 0), new Point(1, 0));
 		
 		for (int a=0; a<QrBlobPoints.size(); a++)
 		{
@@ -99,7 +140,9 @@ public class LocateQrCode
 											g.drawLine(pa.x, pa.y, pc.x, pc.y);
 										}
 										
-										return;
+										Point p = new Point(pa.x - (int) (pa.width * overflow), pa.y - (int) (pa.height * overflow));
+										
+										return new Rectangle(p, pb.x + (int) (pb.width * overflow) - p.x, pc.y + (int) (pc.height * overflow) - p.y);
 									}
 								}
 							}
@@ -108,6 +151,8 @@ public class LocateQrCode
 				}				
 			}
 		}
+		
+		return null;
 	}
 
 	public static void findQrBlobs(BufferedImage image, Graphics g)
@@ -117,20 +162,14 @@ public class LocateQrCode
 
 		QrBlobPoints = new ArrayList<Point>();
 		
-		pixeColors = convertTo2DWithoutUsingGetRGB(image);
-		
+		pixeColors = convertTo2DWithoutUsingGetRGB(image);		
 
 		for (int y = 0; y < pixeColors[0].length; y++)
 		{
 			count = 0;
 
 			for (int x = 0; x < pixeColors.length; x++)
-			{
-				if (x == 22 && y == 22)
-				{
-					System.out.print("");
-				}
-				
+			{				
 				color = getColor(x, y);
 				if (color == WHITE)
 				{
@@ -292,7 +331,7 @@ public class LocateQrCode
 		g = (((int) pixeColors[x][y] & 0xff00) >> 8); // green
 		b = ((int) pixeColors[x][y] & 0xff); // blue
 
-		if (getBrightness(r, g, b) > 0.5)
+		if (getBrightness(r, g, b) >= 0.5)
 		{
 			return WHITE;
 		}
