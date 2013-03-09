@@ -1,5 +1,6 @@
 package de.samueltufan.qrdecoder;
 
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
@@ -23,7 +24,8 @@ public class LocateQrCode
 	
 	public static BufferedImage locate (BufferedImage image, String name)
 	{
-		int color, count = 0, countWhiteX = 0, countBlackX = 0, countWhiteY = 0, countBlackY = 0, countDiffX = 0, countDiffY = 0;
+		int 	color, count = 0, countWhiteX = 0, countBlackX = 0, countWhiteY = 0, countBlackY = 0, countDiffX = 0, countDiffY = 0,
+				fuziness = 10;
 		
 		pixeColors = convertTo2DWithoutUsingGetRGB(image);
 		Graphics g;
@@ -34,6 +36,10 @@ public class LocateQrCode
 			
 			debugImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
 			g = debugImage.getGraphics();
+			g.setColor(Color.WHITE);
+			g.clearRect(0, 0, image.getWidth(), image.getHeight());
+			g.drawRect(0, 0, image.getWidth(), image.getHeight());
+			g.setColor(Color.RED);
 		}
 		
 		for (int y = 0; y < pixeColors[0].length; y++)
@@ -54,14 +60,14 @@ public class LocateQrCode
 						countWhiteX = count;	
 						
 						//check for a corresponding black line above the white one
-						countBlackX = colorCountX(x - countWhiteX, y - 5, x, y, BLACK);						
+						countBlackX = colorCountX(x - countWhiteX, y - fuziness, x, y, BLACK);						
 						countDiffX = Math.abs(countBlackX - countWhiteX);
 						
 						if (countDiffX < 5)
 						{
 							//check for a corresponding white and black line vertically below from this point
 							countWhiteY = colorCountY(x - 2, y, x, y + countWhiteX, WHITE);
-							countBlackY = colorCountY(x + 2, y, x + 5, y + countWhiteX, BLACK);
+							countBlackY = colorCountY(x + 2, y, x + fuziness, y + countWhiteX, BLACK);
 							
 							countDiffY = Math.abs(countBlackY - countWhiteY);
 							
@@ -81,14 +87,14 @@ public class LocateQrCode
 						else
 						{
 							//check for a corresponding black line below the white one
-							countBlackX = colorCountX(x - countWhiteX, y, x, y + 5, BLACK);						
+							countBlackX = colorCountX(x - countWhiteX, y, x, y + fuziness, BLACK);						
 							countDiffX = Math.abs(countBlackX - countWhiteX);
 							
 							if (countDiffX < 5)
 							{
 								//check for a corresponding white and black line vertically above from this point
 								countWhiteY = colorCountY(x - 2, y - countWhiteX, x, y, WHITE);
-								countBlackY = colorCountY(x + 2, y - countWhiteX, x + 5, y, BLACK);
+								countBlackY = colorCountY(x + 2, y - countWhiteX, x + fuziness, y, BLACK);
 								
 								countDiffY = Math.abs(countBlackY - countWhiteY);
 								
