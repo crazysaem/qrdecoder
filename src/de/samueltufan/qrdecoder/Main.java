@@ -17,25 +17,23 @@ import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
 
-import org.imgscalr.Scalr.*;
-
-public class Main 
+public class Main
 {
-	public static void main(String[] args) 
+	public static void main(String[] args)
 	{
-		for (int i=0; i<=17; i++)
+		for (int i = 0; i <= 18; i++)
 		{
 			String result;
-			
-			if (i<10)
+
+			if (i < 10)
 			{
-				result =  decodeQRTag("src/data/0" + i + ".jpg", ""+i, true);
+				result = decodeQRTag("src/data/0" + i + ".jpg", "" + i, true);
 			}
 			else
 			{
-				result =  decodeQRTag("src/data/" + i + ".jpg", ""+i, true);
+				result = decodeQRTag("src/data/" + i + ".jpg", "" + i, true);
 			}
-			
+
 			if (result != null)
 			{
 				System.out.println(i + ": " + result + "!");
@@ -45,48 +43,48 @@ public class Main
 				System.err.println(i + ": " + "No QR-Code found");
 			}
 		}
-
 	}
-	
+
 	public static String decodeQRTag(String filePath, String name, boolean tryHard)
 	{
 		File f = new File(filePath);
 
 		BufferedImage image = null;
-		
-		try 
+
+		try
 		{
 			image = ImageIO.read(f);
-		} catch (IOException e1)
+		}
+		catch (IOException e1)
 		{
 			e1.printStackTrace();
 		}
-		
+
 		image = LocateQrCode.locate(image, name);
-		
-		//convert the image to a binary bitmap source
+
+		// convert the image to a binary bitmap source
 		LuminanceSource source = new BufferedImageLuminanceSource(image);
 		BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
 
-		//decode the barcode
+		// decode the barcode
 		QRCodeReader reader = new QRCodeReader();
 
 		Result result = null;
-		
+
 		Map<DecodeHintType, ?> hints = new HashMap<DecodeHintType, Object>();
 		if (tryHard)
 		{
 			hints.put(DecodeHintType.TRY_HARDER, null);
 		}
-		
-		try 
+
+		try
 		{
 			result = reader.decode(bitmap, hints);
-		} 
-		catch (ReaderException e) 
+		}
+		catch (ReaderException e)
 		{}
 
-		//byte[] b = result.getRawBytes();
+		// byte[] b = result.getRawBytes();
 		if (result != null)
 		{
 			return result.getText();
